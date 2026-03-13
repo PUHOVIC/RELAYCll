@@ -1,14 +1,19 @@
 import asyncio
+import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 import aiohttp
 import logging
-import time
+from dotenv import load_dotenv
+
+load_dotenv()
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN not set in .env file")
+
+SERVER_URL = "http://localhost:5000"  # Если сервер на другой машине, замени на http://IP:5000
 
 logging.basicConfig(level=logging.INFO)
-
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
-SERVER_URL = "http://localhost:5000"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -23,7 +28,6 @@ async def start_command(message: types.Message):
 
 @dp.message()
 async def forward_to_server(message: types.Message):
-    """Пересылает сообщение от пользователя на сервер"""
     user_id = str(message.from_user.id)
     text = message.text
     
@@ -46,7 +50,6 @@ async def forward_to_server(message: types.Message):
         await message.answer("❌ Не удалось связаться с сервером")
 
 async def check_outgoing_messages():
-    """Фоновая задача: проверяет, нет ли ответов с телефона"""
     while True:
         try:
             async with aiohttp.ClientSession() as session:
@@ -67,10 +70,9 @@ async def check_outgoing_messages():
         except Exception as e:
             logging.error(f"Error checking outgoing: {e}")
         
-        await asyncio.sleep(2)  # Проверяем каждые 2 секунды
+        await asyncio.sleep(2)
 
 async def main():
-    # Запускаем фоновую задачу
     asyncio.create_task(check_outgoing_messages())
     await dp.start_polling(bot)
 
